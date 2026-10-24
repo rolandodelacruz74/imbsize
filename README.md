@@ -1,5 +1,9 @@
 # imbsize
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/rolandodelacruz74/imbsize/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/rolandodelacruz74/imbsize/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 Sample size for developing logistic risk prediction models fitted without rebalancing, with class weights or with
 random undersampling.
 
@@ -10,7 +14,7 @@ Both come in exact form (fixed point of the proportional-asymptotic limits under
 with probability ("assurance") versions, and express the cost of rebalancing as a multiplier of the required size.
 
 ```r
-# install.packages("remotes"); remotes::install_github("<user>/imbsize")
+# install.packages("remotes"); remotes::install_github("rolandodelacruz74/imbsize")
 library(imbsize)
 imbsize(cstatistic = 0.81, prevalence = 0.0916, parameters = 71)
 ```

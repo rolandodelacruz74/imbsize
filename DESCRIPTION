@@ -13,6 +13,8 @@ Description: Sample-size criteria for developing logistic risk prediction models
     closed forms and in versions that meet the target with a given probability, and
     express the cost of rebalancing as a multiplier of the required sample size.
 License: MIT + file LICENSE
+URL: https://github.com/rolandodelacruz74/imbsize
+BugReports: https://github.com/rolandodelacruz74/imbsize/issues
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
 Imports: stats, graphics, grDevices
