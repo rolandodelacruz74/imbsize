@@ -1,0 +1,22 @@
+Package: imbsize
+Type: Package
+Title: Sample Size for Logistic Risk Models Fitted with or Without Rebalancing
+Version: 0.1.0
+Authors@R: person("Rolando", "de la Cruz", email = "rolando.delacruz@uai.cl",
+    role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1415-1809"))
+Description: Sample-size criteria for developing logistic risk prediction models
+    fitted without rebalancing, with class weights or with random undersampling.
+    Criterion C1 requires an expected calibration slope of at least S for models used
+    without recalibration; criterion C2 requires that the AUC lost by estimating a model
+    that will be recalibrated be at most delta. Both are computed from the
+    proportional-asymptotic limits of the fit under a Gaussian model, in exact and
+    closed forms and in versions that meet the target with a given probability, and
+    express the cost of rebalancing as a multiplier of the required sample size.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports: stats, graphics, grDevices
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+RoxygenNote: 7.3.1

@@ -1,0 +1,44 @@
+---
+title: "Planning the development of a logistic risk model with imbsize"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Planning the development of a logistic risk model with imbsize}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+A team plans a model for death within 14 days after acute ischaemic stroke, with 71 predictor columns. From
+previous models it anticipates a C-statistic of 0.81 and a prevalence of 0.092.
+
+```{r}
+library(imbsize)
+imbsize(cstatistic = 0.81, prevalence = 0.0916, parameters = 71, form = "closed")
+```
+
+The closed forms are immediate; `form = "exact"` (the default) solves the fixed-point equations and takes a few
+seconds per method. C1 applies if the model will be used without recalibration, C2 if it will be recalibrated
+(Platt scaling on leave-one-out scores). To meet the target in 90% of studies rather than on average:
+
+```{r}
+ss_c2(0.81, 0.0916, 71, method = "unweighted", assurance = 0.9, form = "closed")
+```
+
+The constants behind the closed forms:
+
+```{r}
+criteria_constants(0.81, 0.0916, "unweighted")
+```
+
+How the cost of rebalancing depends on the prevalence and the C-statistic:
+
+```{r, fig.width = 6, fig.height = 4}
+plot(rebalancing_cost(c(0.7, 0.8, 0.9), c(0.02, 0.05, 0.1, 0.2, 0.3)))
+```
+
+The criteria assume Gaussian predictors given the outcome and a correctly specified model. With mostly binary
+predictors and rare categories they can recommend too few patients: add about 20%, or simulate on pilot
+covariates. The criteria of Riley et al. on the optimism of R² and the precision of the overall risk still apply.
