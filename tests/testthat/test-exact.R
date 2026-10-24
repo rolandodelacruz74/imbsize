@@ -25,3 +25,14 @@ test_that("predicted slope at the C1 size is the target", {
   expect_gte(pp$slope, 0.9); expect_lt(pp$slope - 0.9, 1e-3)
   expect_gt(pp$slope_plattK, 1)
 })
+
+test_that("exact C1 matches the reference in 36 designs (prevalence x AUC x method)", {
+  skip_on_cran()
+  p <- 100
+  for (i in seq_len(nrow(ref_epv))) {
+    r <- ref_epv[i, ]
+    a <- ss_c1(r$auc, r$pi, p, method = r$method)
+    n_ref <- r$epv * p / r$pi
+    expect_lt(abs(a$n - ceiling(n_ref)), 2, label = sprintf("pi %.3f, AUC %.2f, %s", r$pi, r$auc, r$method))
+  }
+})

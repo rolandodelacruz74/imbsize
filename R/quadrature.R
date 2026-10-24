@@ -13,13 +13,17 @@ gauss_legendre <- function(n) {
 
 .imbsize_env <- new.env(parent = emptyenv())
 
-# Nodes and normalized weights for E[f(Z)], Z ~ N(0, 1): 600 Gauss-Legendre nodes on [-12, 12].
+# Nodes and normalized weights for E[f(Z)], Z ~ N(0, 1): Gauss-Hermite rule (probabilists' Hermite polynomials,
+# Golub-Welsch), with getOption("imbsize.nodes", 120) nodes.
 normal_nodes <- function() {
-  if (is.null(.imbsize_env$normal)) {
-    gl <- gauss_legendre(600)
-    x <- 12 * gl$x
-    w <- 12 * gl$w * stats::dnorm(x)
-    .imbsize_env$normal <- list(x = x, w = w / sum(w))
+  N <- getOption("imbsize.nodes", 120)
+  if (is.null(.imbsize_env$normal) || length(.imbsize_env$normal$x) != N) {
+    i <- seq_len(N - 1)
+    J <- matrix(0, N, N); J[cbind(i, i + 1)] <- sqrt(i); J[cbind(i + 1, i)] <- sqrt(i)
+    e <- eigen(J, symmetric = TRUE); o <- order(e$values)
+    w <- e$vectors[1, o]^2
+    .imbsize_env$normal <- list(x = e$values[o], w = w / sum(w))
+    .imbsize_env$fp <- NULL; .imbsize_env$path <- NULL
   }
   .imbsize_env$normal
 }

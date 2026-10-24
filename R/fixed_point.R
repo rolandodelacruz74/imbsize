@@ -6,16 +6,23 @@ logit <- function(p) log(p / (1 - p))
 
 # t solving t + lc * expit(-t) = v (proximal point of the logistic loss), elementwise: bisection then Newton.
 prox_logistic <- function(v, lc) {
+  # g(t) = t - v - lc * expit(-t) is increasing with g' >= 1 and its root lies in [v, v + lc]:
+  # safeguarded Newton from one fixed-point step, then bisection for any element that has not converged.
   lo <- v; hi <- v + lc
-  for (k in 1:40) {
-    mid <- 0.5 * (lo + hi)
-    f <- mid - v - lc * expit(-mid)
-    neg <- f < 0; neg[is.na(neg)] <- FALSE
-    lo[neg] <- mid[neg]; hi[!neg] <- mid[!neg]
+  t <- v + lc * expit(-v)
+  for (k in 1:12) {
+    e <- expit(-t)
+    t <- t - (t - v - lc * e) / (1 + lc * e * (1 - e))
+    t <- pmin(pmax(t, lo), hi)
   }
-  t <- 0.5 * (lo + hi)
-  for (k in 1:8) {
-    t <- t - (t - v - lc * expit(-t)) / (1 + lc * expit(t) * expit(-t))
+  bad <- which(!is.finite(t) | abs(t - v - lc * expit(-t)) > 1e-10 * (1 + abs(t)))
+  if (length(bad)) {
+    l <- lo[bad]; h <- hi[bad]; vv <- v[bad]; lcb <- if (length(lc) > 1) lc[bad] else lc
+    for (k in 1:60) {
+      mid <- 0.5 * (l + h); f <- mid - vv - lcb * expit(-mid); neg <- f < 0; neg[is.na(neg)] <- FALSE
+      l[neg] <- mid[neg]; h[!neg] <- mid[!neg]
+    }
+    t[bad] <- 0.5 * (l + h)
   }
   t
 }
@@ -47,8 +54,8 @@ newton_solve <- function(x0, fn, tol = 1e-12, maxit = 60) {
   x <- x0; f <- fn(x); nf <- max(abs(f))
   for (it in seq_len(maxit)) {
     if (!all(is.finite(f)) || nf < tol) break
-    J <- matrix(0, 4, 4)
-    for (j in 1:4) {
+    d <- length(x); J <- matrix(0, d, d)
+    for (j in seq_len(d)) {
       h <- 1e-7 * max(1, abs(x[j])); xh <- x; xh[j] <- xh[j] + h
       J[, j] <- (fn(xh) - f) / h
     }
@@ -106,11 +113,11 @@ fixed_point <- function(s, prevalence, kappa, c = 1) {
     x <- c(2 * s, log(sqrt(20 * k0)), log(k0 / (pi * (1 - pi))), logit(pi))
     sol <- solve_at(x, k0, 0); x <- sol$x
     if (kappa > k0) {
-      ks <- exp(seq(log(k0), log(kappa), length.out = 40)); kp <- k0
+      ks <- exp(seq(log(k0), log(kappa), length.out = 15)); kp <- k0
       for (k in ks[-1]) { sol <- advance(x, kp, 0, k, 0); x <- sol$x; kp <- k }
     }
   if (c != 1) {
-    ls <- seq(0, log(c), length.out = max(3, ceiling(abs(log(c)) * 12)))
+    ls <- seq(0, log(c), length.out = max(3, ceiling(abs(log(c)) * 5)))
     for (j in seq_along(ls)[-1]) { sol <- advance(x, kappa, ls[j - 1], kappa, ls[j]); x <- sol$x }
   }
   }

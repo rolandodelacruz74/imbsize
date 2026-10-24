@@ -23,6 +23,24 @@ solve_n <- function(g, n_lo, n_hi = 1e7) {
   exp(r$root)
 }
 
+# Exact criterion as one system: the fixed-point equations plus "criterion = target", with log kappa as a fifth
+# unknown. crit(a, sigma, kappa) returns the criterion value minus its target. Starts from the fixed point at the
+# closed-form kappa; falls back to a root search in n if the joint Newton fails.
+solve_exact <- function(s, sp, parameters, crit, kappa0, fallback) {
+  fp <- fixed_point(s, sp$pi, kappa0, sp$c)
+  x0 <- c(fp$alpha, log(fp$sigma), NA, fp$b, log(kappa0))
+  base <- paste(signif(c(s, sp$pi, sp$c), 12), collapse = "_")
+  pp <- .imbsize_env$path[[base]]
+  x0[3] <- pp$x[[which.min(abs(pp$k - kappa0))]][3]
+  fn <- function(par) {
+    k <- exp(par[5])
+    c(fp_residuals(par[1:4], s, sp$pi, k, sp$c), crit(par[1], exp(par[2]), k))
+  }
+  sol <- newton_solve(x0, fn, tol = 1e-11)
+  if (is.finite(sol$res) && sol$res < 1e-9) return(parameters * sp$kmult / exp(sol$x[5]))
+  fallback()
+}
+
 min_n <- function(prevalence, parameters, method, ksep) {
   sp <- problem_spec(method, prevalence)
   parameters * sp$kmult / (0.95 * ksep) # n at which the fitted problem reaches 95% of the threshold
@@ -61,7 +79,12 @@ ss_c1 <- function(cstatistic, prevalence, parameters, method = c("unweighted", "
     }
     ks <- kappa_sep(cstatistic, if (m == "undersampling") 0.5 else prevalence)
     nlo <- min_n(prevalence, parameters, m, ks)
-    solve_n(function(n) limits_at(s, prevalence, parameters, n, m)$cs - z * cst$tau / sqrt(n) - slope, nlo)
+    g <- function(n) limits_at(s, prevalence, parameters, n, m)$cs - z * cst$tau / sqrt(n) - slope
+    Ak <- cst$A * parameters * sp$kmult
+    n0 <- if (z == 0) Ak * slope / (1 - slope) else solve_n(function(n) 1 / (1 + Ak / n) - z * cst$tau / sqrt(n) - slope, 10)
+    k0 <- min(parameters * sp$kmult / n0, 0.9 * ks)
+    crit <- function(a, sg, k) 2 * a * s / (a^2 + sg^2) - z * cst$tau / sqrt(parameters * sp$kmult / k) - slope
+    solve_exact(s, sp, parameters, crit, k0, function() solve_n(g, nlo))
   })
   out_table(n[method], n["unweighted"], prevalence, parameters, "C1")
 }
@@ -93,7 +116,13 @@ ss_c2 <- function(cstatistic, prevalence, parameters, method = c("unweighted", "
     }
     ks <- kappa_sep(cstatistic, if (m == "undersampling") 0.5 else prevalence)
     nlo <- min_n(prevalence, parameters, m, ks)
-    solve_n(function(n) stats::pnorm(sqrt(2) * s * limits_at(s, prevalence, parameters, n, m)$rho) - target, nlo)
+    g <- function(n) stats::pnorm(sqrt(2) * s * limits_at(s, prevalence, parameters, n, m)$rho) - target
+    cst <- criteria_constants(cstatistic, prevalence, m)
+    rs <- stats::qnorm(target) / (sqrt(2) * s)
+    n0 <- parameters * sp$kmult * cst$nu0 / (s^2 * (rs^-2 - 1))
+    k0 <- min(parameters * sp$kmult / n0, 0.9 * ks)
+    crit <- function(a, sg, k) stats::pnorm(sqrt(2) * s * a / sqrt(a^2 + sg^2)) - target
+    solve_exact(s, sp, parameters, crit, k0, function() solve_n(g, nlo))
   })
   out_table(n[method], n["unweighted"], prevalence, parameters, "C2")
 }
