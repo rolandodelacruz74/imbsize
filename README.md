@@ -20,7 +20,8 @@ imbsize(cstatistic = 0.81, prevalence = 0.0916, parameters = 71)
 ```
 
 The criteria assume Gaussian predictors given the outcome, a correctly specified logistic model and independent
-patients. With mostly binary predictors and rare categories, add about 20% or simulate on pilot covariates.
+patients. With mostly binary predictors and rare categories they can recommend too few patients; simulate on pilot
+covariates when they are available.
 
 Reference: de la Cruz R. Sample-size criteria for logistic risk models that will be recalibrated or rebalanced
 (manuscript).

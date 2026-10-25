@@ -4,8 +4,8 @@
 #' will be recalibrated) for the unweighted fit, class weights and random undersampling.
 #'
 #' The criteria assume Gaussian predictors given the outcome, a correctly specified logistic model and independent
-#' patients. With mostly binary predictors and rare categories they can recommend too few patients; a margin of about
-#' 20\% over the exact criteria, or simulation on pilot covariates, is advisable. The criteria of Riley et al. (2019)
+#' patients. With mostly binary predictors and rare categories they can recommend too few patients (5--17\% too few
+#' for C1 in two clinical data sets); simulation on pilot covariates is advisable when they are available. The criteria of Riley et al. (2019)
 #' on the optimism of \eqn{R^2} and on the precision of the overall risk still apply.
 #'
 #' @inheritParams ss_c1
@@ -33,6 +33,6 @@ print.imbsize <- function(x, ...) {
   cat(sprintf("C1: expected calibration slope >= %.2f (model used without recalibration)\n", a$slope))
   cat(sprintf("C2: loss of AUC <= %.3f (model that will be recalibrated)\n\n", a$auc_loss))
   print(as.data.frame(unclass(x))[, c("criterion", "method", "n", "events", "EPV", "multiplier")], row.names = FALSE)
-  cat("\nWith mostly binary or rare predictors, add about 20% or simulate on pilot covariates.\n")
+  cat("\nWith mostly binary or rare predictors the criteria may recommend too few patients; simulate on pilot covariates if available.\n")
   invisible(x)
 }

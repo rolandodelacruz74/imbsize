@@ -43,8 +43,8 @@ will be recalibrated) for the unweighted fit, class weights and random undersamp
 }
 \details{
 The criteria assume Gaussian predictors given the outcome, a correctly specified logistic model and independent
-patients. With mostly binary predictors and rare categories they can recommend too few patients; a margin of about
-20\% over the exact criteria, or simulation on pilot covariates, is advisable. The criteria of Riley et al. (2019)
+patients. With mostly binary predictors and rare categories they can recommend too few patients (5--17\% too few
+for C1 in two clinical data sets); simulation on pilot covariates is advisable when they are available. The criteria of Riley et al. (2019)
 on the optimism of \eqn{R^2} and on the precision of the overall risk still apply.
 }
 \examples{

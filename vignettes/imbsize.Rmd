@@ -40,5 +40,5 @@ plot(rebalancing_cost(c(0.7, 0.8, 0.9), c(0.02, 0.05, 0.1, 0.2, 0.3)))
 ```
 
 The criteria assume Gaussian predictors given the outcome and a correctly specified model. With mostly binary
-predictors and rare categories they can recommend too few patients: add about 20%, or simulate on pilot
-covariates. The criteria of Riley et al. on the optimism of R² and the precision of the overall risk still apply.
+predictors and rare categories they can recommend too few patients (5--17% too few for C1 in two clinical data
+sets); simulate on pilot covariates when they are available. The criteria of Riley et al. on the optimism of R² and the precision of the overall risk still apply.
