@@ -22,5 +22,5 @@ imbsize(cstatistic = 0.81, prevalence = 0.0916, parameters = 71)
 The criteria assume Gaussian predictors given the outcome, a correctly specified logistic model and independent
 patients. With mostly binary predictors and rare categories, add about 20% or simulate on pilot covariates.
 
-Reference: de la Cruz R. Sample-size criteria for the calibration and discrimination of logistic risk models fitted
-with or without rebalancing (manuscript).
+Reference: de la Cruz R. Sample-size criteria for logistic risk models that will be recalibrated or rebalanced
+(manuscript).
