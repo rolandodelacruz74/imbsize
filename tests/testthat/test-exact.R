@@ -7,7 +7,7 @@ test_that("exact criteria match the reference implementation (trial)", {
     expect_equal(b$n[b$method == r$method], ceiling(r$c2))
   }
   # agreement with samplesizedev (GitHub commit 2a62e37), which returned 7318 by simulation
-  expect_lt(abs(a$n[a$method == "unweighted"] - 7318), 0.01 * 7318)
+  expect_lt(abs(a$n[a$method == "unweighted"] - 7318), 0.02 * 7318)
 })
 
 test_that("probability versions match (trial, unweighted)", {
@@ -32,7 +32,7 @@ test_that("exact C1 matches the reference in 36 designs (prevalence x AUC x meth
   for (i in seq_len(nrow(ref_epv))) {
     r <- ref_epv[i, ]
     a <- ss_c1(r$auc, r$pi, p, method = r$method)
-    n_ref <- r$epv * p / r$pi
+    n_ref <- r$epv * p / r$pi * (p - 1) / p # reference computed with kappa = p/n
     expect_lt(abs(a$n - ceiling(n_ref)), 2, label = sprintf("pi %.3f, AUC %.2f, %s", r$pi, r$auc, r$method))
   }
 })

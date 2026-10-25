@@ -1,7 +1,7 @@
 Package: imbsize
 Type: Package
 Title: Sample Size for Logistic Risk Models Fitted with or Without Rebalancing
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: person("Rolando", "de la Cruz", email = "rolando.delacruz@uai.cl",
     role = c("aut", "cre"), comment = c(ORCID = "0000-0002-1415-1809"))
 Description: Sample-size criteria for developing logistic risk prediction models

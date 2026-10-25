@@ -4,7 +4,7 @@ check_inputs <- function(cstatistic, prevalence, parameters) {
   if (!is.numeric(cstatistic) || cstatistic <= 0.5 || cstatistic >= 1) stop("cstatistic must lie in (0.5, 1)")
   if (!is.numeric(prevalence) || prevalence <= 0 || prevalence >= 0.5)
     stop("prevalence must lie in (0, 0.5); for a common outcome, code the rarer class as the event")
-  if (!is.numeric(parameters) || parameters < 1) stop("parameters must be a positive number of predictor columns")
+  if (!is.numeric(parameters) || parameters < 2) stop("parameters must be a number of predictor columns of at least 2")
   invisible(TRUE)
 }
 
@@ -56,9 +56,9 @@ min_n <- function(prevalence, parameters, method, ksep) {
 #' @param method One or more of \code{"unweighted"}, \code{"weights"} and \code{"undersampling"}.
 #' @param slope Target expected calibration slope \eqn{S}.
 #' @param assurance If not \code{NULL}, the probability with which the slope must reach \code{slope}
-#'   (probability version; a heuristic that combines the proportional-regime mean with a fixed-\eqn{p} standard
-#'   deviation).
-#' @param form \code{"exact"} (fixed point) or \code{"closed"} (hyperbolic closed form).
+#'   (probability version: proportional-regime mean with standard deviation \eqn{cs(\kappa)\tau/\sqrt{n}}).
+#' @param form \code{"exact"} (fixed point, recommended) or \code{"closed"} (hyperbolic closed form, which
+#'   slightly underestimates the exact size).
 #' @return A data frame with one row per method: total sample size \code{n}, events, EPV and the multiplier relative
 #'   to the unweighted fit.
 #' @examples
@@ -69,22 +69,24 @@ ss_c1 <- function(cstatistic, prevalence, parameters, method = c("unweighted", "
   check_inputs(cstatistic, prevalence, parameters); form <- match.arg(form)
   s <- stats::qnorm(cstatistic) / sqrt(2)
   ms <- union("unweighted", method)
+  d <- parameters - 1 # kappa = (p - 1) / n: the leading terms are driven by the p - 1 orthogonal coordinates
   n <- sapply(ms, function(m) {
     cst <- criteria_constants(cstatistic, prevalence, m); sp <- problem_spec(m, prevalence)
     z <- if (is.null(assurance)) 0 else stats::qnorm(assurance)
+    # probability version: sd of the slope = cs(kappa) * tau / sqrt(n)
     if (form == "closed") {
-      Ak <- cst$A * parameters * sp$kmult
+      Ak <- cst$A * d * sp$kmult
       if (z == 0) return(Ak * slope / (1 - slope))
-      return(solve_n(function(n) 1 / (1 + Ak / n) - z * cst$tau / sqrt(n) - slope, 10))
+      return(solve_n(function(n) (1 - z * cst$tau / sqrt(n)) / (1 + Ak / n) - slope, 10))
     }
     ks <- kappa_sep(cstatistic, if (m == "undersampling") 0.5 else prevalence)
-    nlo <- min_n(prevalence, parameters, m, ks)
-    g <- function(n) limits_at(s, prevalence, parameters, n, m)$cs - z * cst$tau / sqrt(n) - slope
-    Ak <- cst$A * parameters * sp$kmult
-    n0 <- if (z == 0) Ak * slope / (1 - slope) else solve_n(function(n) 1 / (1 + Ak / n) - z * cst$tau / sqrt(n) - slope, 10)
-    k0 <- min(parameters * sp$kmult / n0, 0.9 * ks)
-    crit <- function(a, sg, k) 2 * a * s / (a^2 + sg^2) - z * cst$tau / sqrt(parameters * sp$kmult / k) - slope
-    solve_exact(s, sp, parameters, crit, k0, function() solve_n(g, nlo))
+    nlo <- min_n(prevalence, d, m, ks)
+    g <- function(n) limits_at(s, prevalence, d, n, m)$cs * (1 - z * cst$tau / sqrt(n)) - slope
+    Ak <- cst$A * d * sp$kmult
+    n0 <- if (z == 0) Ak * slope / (1 - slope) else solve_n(function(n) (1 - z * cst$tau / sqrt(n)) / (1 + Ak / n) - slope, 10)
+    k0 <- min(d * sp$kmult / n0, 0.9 * ks)
+    crit <- function(a, sg, k) 2 * a * s / (a^2 + sg^2) * (1 - z * cst$tau / sqrt(d * sp$kmult / k)) - slope
+    solve_exact(s, sp, d, crit, k0, function() solve_n(g, nlo))
   })
   out_table(n[method], n["unweighted"], prevalence, parameters, "C1")
 }
@@ -107,22 +109,23 @@ ss_c2 <- function(cstatistic, prevalence, parameters, method = c("unweighted", "
   delta <- if (is.null(assurance)) auc_loss else auc_loss * (parameters - 1) / stats::qchisq(assurance, parameters - 1)
   target <- cstatistic - delta
   ms <- union("unweighted", method)
+  d <- parameters - 1
   n <- sapply(ms, function(m) {
     sp <- problem_spec(m, prevalence)
     if (form == "closed") {
       cst <- criteria_constants(cstatistic, prevalence, m)
       rs <- stats::qnorm(target) / (sqrt(2) * s)
-      return(parameters * sp$kmult * cst$nu0 / (s^2 * (rs^-2 - 1)))
+      return(d * sp$kmult * cst$nu0 / (s^2 * (rs^-2 - 1)))
     }
     ks <- kappa_sep(cstatistic, if (m == "undersampling") 0.5 else prevalence)
-    nlo <- min_n(prevalence, parameters, m, ks)
-    g <- function(n) stats::pnorm(sqrt(2) * s * limits_at(s, prevalence, parameters, n, m)$rho) - target
+    nlo <- min_n(prevalence, d, m, ks)
+    g <- function(n) stats::pnorm(sqrt(2) * s * limits_at(s, prevalence, d, n, m)$rho) - target
     cst <- criteria_constants(cstatistic, prevalence, m)
     rs <- stats::qnorm(target) / (sqrt(2) * s)
-    n0 <- parameters * sp$kmult * cst$nu0 / (s^2 * (rs^-2 - 1))
-    k0 <- min(parameters * sp$kmult / n0, 0.9 * ks)
+    n0 <- d * sp$kmult * cst$nu0 / (s^2 * (rs^-2 - 1))
+    k0 <- min(d * sp$kmult / n0, 0.9 * ks)
     crit <- function(a, sg, k) stats::pnorm(sqrt(2) * s * a / sqrt(a^2 + sg^2)) - target
-    solve_exact(s, sp, parameters, crit, k0, function() solve_n(g, nlo))
+    solve_exact(s, sp, d, crit, k0, function() solve_n(g, nlo))
   })
   out_table(n[method], n["unweighted"], prevalence, parameters, "C2")
 }

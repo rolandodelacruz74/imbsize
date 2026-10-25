@@ -28,7 +28,7 @@ predict_performance <- function(cstatistic, prevalence, parameters, n,
   check_inputs(cstatistic, prevalence, parameters)
   s <- stats::qnorm(cstatistic) / sqrt(2)
   rows <- lapply(method, function(m) {
-    sp <- problem_spec(m, prevalence); k <- parameters / n * sp$kmult
+    sp <- problem_spec(m, prevalence); k <- (parameters - 1) / n * sp$kmult
     ks <- kappa_sep(cstatistic, sp$pi)
     if (k >= ks) {
       warning(sprintf("%s: kappa = %.4f >= kappa_sep = %.4f; the unpenalized fit does not exist in the limit", m, k, ks))
