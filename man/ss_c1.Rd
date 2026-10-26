@@ -26,10 +26,10 @@ ss_c1(
 \item{slope}{Target expected calibration slope \eqn{S}.}
 
 \item{assurance}{If not \code{NULL}, the probability with which the slope must reach \code{slope}
-(probability version; a heuristic that combines the proportional-regime mean with a fixed-\eqn{p} standard
-deviation).}
+(probability version: proportional-regime mean with standard deviation \eqn{cs(\kappa)\tau/\sqrt{n}}).}
 
-\item{form}{\code{"exact"} (fixed point) or \code{"closed"} (hyperbolic closed form).}
+\item{form}{\code{"exact"} (fixed point, recommended) or \code{"closed"} (hyperbolic closed form, which
+slightly underestimates the exact size).}
 }
 \value{
 A data frame with one row per method: total sample size \code{n}, events, EPV and the multiplier relative

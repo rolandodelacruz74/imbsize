@@ -69,3 +69,27 @@ criteria_constants <- function(cstatistic, prevalence, method = "unweighted") {
   if (method == "undersampling") tau <- tau / sqrt(2 * prevalence)
   list(A = const_A(s, sp$pi, sp$c), nu0 = const_nu0(s, sp$pi, sp$c), tau = tau, s = s)
 }
+
+#' Sample size for a precise leave-one-out recalibration
+#'
+#' Criterion C2 controls the expected loss of AUC of a model that will be recalibrated by Platt scaling on
+#' leave-one-out scores, and presumes that the recalibration slope is estimated well. The recalibration is an unweighted
+#' logistic regression of the outcome on one score, whose slope has standard deviation about
+#' \eqn{\sqrt{A_{unw}/n}}, with \eqn{A_{unw}} the first-order constant of the calibration slope of the unweighted fit
+#' (for which \eqn{\tau^2 = A}). Requiring the recalibrated slope to lie in \eqn{[1-\varepsilon, 1+\varepsilon]} with
+#' probability \code{level} gives \eqn{n_{prec} = A_{unw}\{z_{(1+level)/2}/\varepsilon\}^2}, whatever method produced the
+#' score. The requirement does not grow with the number of columns, so it binds only when there are few; take the
+#' larger of it and the C2 size. In simulation the approximation was somewhat optimistic at the smallest sizes.
+#'
+#' @inheritParams kappa_sep
+#' @param epsilon Half-width of the target interval for the recalibrated slope (default 0.1).
+#' @param level Probability that the recalibrated slope lies in the interval (default 0.9).
+#' @return The required number of patients, rounded up.
+#' @examples
+#' ss_recal_precision(0.81, 0.0916)   # 2 986
+#' @export
+ss_recal_precision <- function(cstatistic, prevalence, epsilon = 0.1, level = 0.9) {
+  stopifnot(epsilon > 0, level > 0, level < 1)
+  A <- criteria_constants(cstatistic, prevalence, "unweighted")$A
+  ceiling(A * (stats::qnorm((1 + level) / 2) / epsilon)^2)
+}
